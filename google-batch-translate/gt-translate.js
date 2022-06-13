@@ -6,16 +6,12 @@ const CREDENTIALS = JSON.parse(process.env.CREDENTIALS);
 
 const translate = new Translate({
   credentials: CREDENTIALS,
-  projectId: CREDENTIALS.projectId,
+  projectId: CREDENTIALS.project_id,
 });
 
 const translateText = async (text, targetLanguage) => {
-  try {
-    let [response] = await translate.translate(text, targetLanguage);
-    return response;
-  } catch (error) {
-    console.log("err", error);
-  }
+  let [response] = await translate.translate(text, targetLanguage);
+  return response;
 };
 const translateAndSave = async ({
   target,
@@ -32,7 +28,6 @@ const translateAndSave = async ({
   }
   values = values.slice(from, to);
   let t = await translateText(values, target);
-  // console.log(t)
   const translation = t;
   var obj = JSON.parse(fs.readFileSync(inputFile, "utf8"));
   let keys = Object.keys(obj);
@@ -43,8 +38,7 @@ const translateAndSave = async ({
   }
   const translationsJSON = JSON.stringify(translationsObj, null, 2);
   fs.writeFileSync(outputFile, translationsJSON, "utf8");
-  console.log(`${outputFile} file saved successfully`);
-  // console.log(translationsObj)
+  // console.log(`${outputFile} file saved successfully`);
 };
 let translateHelper = async (en_US, gt_max_limit, target) => {
   let translationFiles = [];
@@ -54,8 +48,6 @@ let translateHelper = async (en_US, gt_max_limit, target) => {
   let en_US_value_count = en_US_values.length;
 
   let remaining_last = en_US_value_count % gt_max_limit;
-  console.log(en_US_value_count);
-  console.log(gt_max_limit);
   let times = (en_US_value_count - remaining_last) / gt_max_limit;
 
   let from = 0;
@@ -63,17 +55,13 @@ let translateHelper = async (en_US, gt_max_limit, target) => {
   for (let i = 0; i < times + 1; i++) {
     // console.log(`${target}, ${target}${i}.json, ${en_US}\t${from}-${to}`)
     translationFiles.push(`${target}${i}.json`);
-    try {
-      await translateAndSave({
-        target: target,
-        outputFile: `${target}${i}.json`,
-        inputFile: en_US,
-        from: from,
-        to: to,
-      });
-    } catch (error) {
-      console.error(error);
-    }
+    await translateAndSave({
+      target: target,
+      outputFile: `${target}${i}.json`,
+      inputFile: en_US,
+      from: from,
+      to: to,
+    });
     from += gt_max_limit;
     if (i == times - 1) {
       to = to + remaining_last;
@@ -122,13 +110,11 @@ const updateTargetCorrespondingFiles = () => {
     }
     targetCorrespondingFiles.push(translationFiles);
   }
-  console.log(targetCorrespondingFiles);
 };
 
 let gt_max_limit = 128;
 let en_US = "en_US.json";
-let targets = ["es", "fr", "ja"];
-// let targets = ['es',];
+let targets = ["es"];
 let targetCorrespondingFiles = [];
 
 translateAll(en_US, gt_max_limit, targets, targetCorrespondingFiles).then(
