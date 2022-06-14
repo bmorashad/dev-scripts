@@ -1,67 +1,67 @@
 const { Translate } = require("@google-cloud/translate").v2;
 require("dotenv").config();
-const jsonUtil = require("./jsonUtil");
+const fileUtil = require("./fileUtils");
+const path = require("path");
 
 const CREDENTIALS = JSON.parse(process.env.CREDENTIALS);
 
-const translate = new Translate({
+const translator = new Translate({
   credentials: CREDENTIALS,
   projectId: CREDENTIALS.project_id,
 });
 
-const translateText = async (text, targetLanguage) => {
-  let [response] = await translate.translate(text, targetLanguage);
+const translateText = async (text_list, to, from = null) => {
+  let translation_properties = {
+    to,
+  };
+  if (from) {
+    translation_properties.from = from;
+  }
+  console.log(translation_properties);
+  let [response] = await translator.translate(
+    text_list,
+    translation_properties
+  );
   return response;
 };
-const translateAndSave = async ({
-  target,
-  outputFile,
-  inputFile,
-  from,
-  to,
-}) => {
-  var fs = require("fs");
-  const keyValueObj = JSON.parse(fs.readFileSync(inputFile, "utf8"));
-  let values = Object.values(keyValueObj);
-  if (to == -1) {
-    to = values.length;
-  }
-  values = values.slice(from, to);
-  let t = await translateText(values, target);
-  const translation = t;
-  var obj = JSON.parse(fs.readFileSync(inputFile, "utf8"));
-  let keys = Object.keys(obj);
-  keys = keys.slice(from, to);
-  const translationsObj = {};
-  for (let i = 0; i < to; i++) {
-    translationsObj[keys[i]] = translation[i];
-  }
-  const translationsJSON = JSON.stringify(translationsObj, null, 2);
-  fs.writeFileSync(outputFile, translationsJSON, "utf8");
-  // console.log(`${outputFile} file saved successfully`);
-};
-let translateHelper = async (en_US, gt_max_limit, target) => {
-  let translationFiles = [];
-  var fs = require("fs");
-  const en_US_obj = JSON.parse(fs.readFileSync(en_US, "utf8"));
-  let en_US_values = Object.values(en_US_obj);
-  let en_US_value_count = en_US_values.length;
 
-  let remaining_last = en_US_value_count % gt_max_limit;
-  let times = (en_US_value_count - remaining_last) / gt_max_limit;
+const translate = async ({ target, input, from, to, from_language }) => {
+  let input_values = Object.values(input);
+  let input_keys = Object.keys(input);
+  if (to == -1) {
+    to = input_values.length;
+  }
+  input_values = input_values.slice(from, to);
+  let t = await translateText(input_values, target, from_language);
+  const translation = t;
+  input_keys = input_keys.slice(from, to);
+  const translations_obj = {};
+  for (let i = 0; i < translation.length; i++) {
+    translations_obj[input_keys[i]] = translation[i];
+  }
+  return translations_obj;
+};
+
+let translateInBatches = async (input, gt_max_limit, target, from_language) => {
+  let input_values = Object.values(input);
+  let input_value_count = input_values.length;
+
+  let remaining_last = input_value_count % gt_max_limit;
+  let times = (input_value_count - remaining_last) / gt_max_limit;
 
   let from = 0;
   let to = gt_max_limit;
+  let all_translations = {};
+
   for (let i = 0; i < times + 1; i++) {
-    // console.log(`${target}, ${target}${i}.json, ${en_US}\t${from}-${to}`)
-    translationFiles.push(`${target}${i}.json`);
-    await translateAndSave({
-      target: target,
-      outputFile: `${target}${i}.json`,
-      inputFile: en_US,
-      from: from,
-      to: to,
+    let transaltion = await translate({
+      target,
+      input,
+      from,
+      to,
+      from_language,
     });
+    all_translations = { ...transaltion, ...all_translations };
     from += gt_max_limit;
     if (i == times - 1) {
       to = to + remaining_last;
@@ -69,70 +69,60 @@ let translateHelper = async (en_US, gt_max_limit, target) => {
       to += gt_max_limit;
     }
   }
-  return translationFiles;
-  // jsonUtil.concatJsonFromList(translationFiles, `${target}-kaveesha.json`)
+  return { translation: all_translations, target };
 };
 
-let translateAll = async (
-  en_US,
+let translateAndSave = async (
+  input_file,
   gt_max_limit,
-  targets,
-  targetCorrespondingFiles
+  target_languages,
+  from_language
 ) => {
-  for (let j = 0; j < targets.length; j++) {
-    let result = await translateHelper(en_US, gt_max_limit, targets[j]);
-    targetCorrespondingFiles.push(result);
+  const input = JSON.parse(fileUtil.readFile(input_file, "utf8"));
+  let translations = [];
+  for (let j = 0; j < target_languages.length; j++) {
+    let translation = await translateInBatches(
+      input,
+      gt_max_limit,
+      target_languages[j],
+      from_language
+    );
+    translations.push(translation);
   }
-};
-
-const updateTargetCorrespondingFiles = () => {
-  for (let j = 0; j < targets.length; j++) {
-    let translationFiles = [];
-    var fs = require("fs");
-    const en_US_obj = JSON.parse(fs.readFileSync(en_US, "utf8"));
-    let en_US_values = Object.values(en_US_obj);
-    let en_US_value_count = en_US_values.length;
-
-    let remaining_last = en_US_value_count % gt_max_limit;
-    let times = (en_US_value_count - remaining_last) / gt_max_limit;
-
-    let from = 0;
-    let to = gt_max_limit;
-    for (let i = 0; i < times + 1; i++) {
-      // console.log(`${target}, ${target}${i}.json, ${en_US}\t${from}-${to}`)
-      translationFiles.push(`${targets[j]}${i}.json`);
-      from += gt_max_limit;
-      if (i == times - 1) {
-        to = to + remaining_last;
-      } else {
-        to += gt_max_limit;
-      }
-    }
-    targetCorrespondingFiles.push(translationFiles);
-  }
+  return translations;
 };
 
 let gt_max_limit = 128;
-let en_US = "en_US.json";
-let targets = ["es"];
-let targetCorrespondingFiles = [];
+let file_to_be_translated = "en_US.json";
+let language_of_file_to_be_translated = null;
+let target_languages = ["es"];
+let output_path = "output3";
 
-translateAll(en_US, gt_max_limit, targets, targetCorrespondingFiles).then(
-  (__) => {
-    targetCorrespondingFiles.forEach((targetFiles, indx) => {
-      jsonUtil.concatJsonFromList(targetFiles, `${targets[indx]}.json`);
-    });
-  }
-);
-
-/* translateAndSave({target: 'fr', outputFile: 'es2.json', inputFile: 'fr_FR.json', from: 0, to: 128})
-translateAndSave({target: 'es', outputFile: 'es3.json', inputFile: 'fr_FR.json', from: 128, to: -1})
-
-translateAndSave({target: 'es', outputFile: 'es2.json', inputFile: 'fr_FR.json', from: 0, to: 128})
-translateAndSave({target: 'es', outputFile: 'es3.json', inputFile: 'fr_FR.json', from: 128, to: -1})
-
-translateAndSave({target: 'ja', outputFile: 'ja2.json', inputFile: 'fr_FR.json', from: 0, to: 128})
-translateAndSave({target: 'ja', outputFile: 'ja3.json', inputFile: 'fr_FR.json', from: 128, to: -1})
-
-jsonUtil.concatJson('es2.json', 'es3.json', 'es_sandaru.json');
-jsonUtil.concatJson('ja2.json', 'ja3.json', 'ja_sandaru.json'); */
+translateAndSave(
+  file_to_be_translated,
+  gt_max_limit,
+  target_languages,
+  language_of_file_to_be_translated
+).then((translation_objs) => {
+  translation_objs.forEach((translation_obj) => {
+    let { translation, target } = translation_obj;
+    let translation_json = JSON.stringify(translation, null, 2);
+    let json_extension = ".json";
+    fileUtil.createDirIfNotExists(output_path);
+    let translation_file_name =
+      output_path + path.sep + target + json_extension;
+    fileUtil.saveFile(
+      translation_file_name,
+      translation_json,
+      "utf8",
+      function (err) {
+        if (err) {
+          console.error(
+            "Error occurred while saving " + translation_file_name,
+            err
+          );
+        }
+      }
+    );
+  });
+});
