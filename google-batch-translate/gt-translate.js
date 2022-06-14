@@ -1,6 +1,6 @@
 const { Translate } = require("@google-cloud/translate").v2;
 require("dotenv").config();
-const fileUtil = require("./fileUtils");
+const fileUtil = require("./file-utils");
 const path = require("path");
 
 const CREDENTIALS = JSON.parse(process.env.CREDENTIALS);
@@ -17,7 +17,6 @@ const translateText = async (text_list, to, from = null) => {
   if (from) {
     translation_properties.from = from;
   }
-  console.log(translation_properties);
   let [response] = await translator.translate(
     text_list,
     translation_properties
@@ -93,10 +92,10 @@ let translateAndSave = async (
 };
 
 let gt_max_limit = 128;
-let file_to_be_translated = "en_US.json";
+let file_to_be_translated = "/home/bmora/Work/Entgra/Translation/en_US.json";
 let language_of_file_to_be_translated = null;
 let target_languages = ["es"];
-let output_path = "output3";
+let output_path = "__output";
 
 translateAndSave(
   file_to_be_translated,
