@@ -114,6 +114,7 @@ let translateAndSave = async (
   const input = JSON.parse(file_util.readFile(input_file, "utf8"));
   let translations = [];
   for (let j = 0; j < target_languages.length; j++) {
+    console.info(`Translating to ${target_languages[j]}...`);
     let translation = await translateInBatches(
       input,
       GT_MAX_LIMIT,
@@ -121,6 +122,8 @@ let translateAndSave = async (
       from_language
     );
     translations.push(translation);
+    console.info(`Successfully translated to ${target_languages[j]}`);
+    console.log();
   }
   return translations;
 };
