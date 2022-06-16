@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const { Translate } = require("@google-cloud/translate").v2;
 const file_util = require("./lib/utils/file-util");
 const argv_util = require("./lib/utils/argv-util");

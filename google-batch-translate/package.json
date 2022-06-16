@@ -1,8 +1,8 @@
 {
-  "name": "translation",
+  "name": "gtranslate",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,5 +11,8 @@
   "dependencies": {
     "@google-cloud/translate": "^6.2.4",
     "dotenv": "^10.0.0"
+  },
+  "bin" : {
+    "gtranslate" : "main.js"
   }
 }
