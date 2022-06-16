@@ -8,6 +8,13 @@ module.exports.saveFile = (filePath, content, options = null) => {
   });
 };
 
+module.exports.copyFile = (filePath, dest) => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error("No such env file!");
+  }
+  fs.copyFileSync(filePath, dest);
+};
+
 module.exports.readFile = (file, options = null) => {
   return fs.readFileSync(file, options);
 };
