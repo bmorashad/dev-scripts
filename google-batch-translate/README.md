@@ -97,9 +97,9 @@ Also note that the script doesn't take argument order into account
 #### Optional Args
 
 ```
--l 						- Language of the input file (This is auto detected by google api if not passed)
+-l 		- Language of the input file (This is auto detected by google api if not passed)
 --output-dir 	- Directory in which the translated files should be saved (default: __output)
---env 				- This is optional only if an env is already added permanantly with --add-config command
+--env 		- This is optional only if an env is already added permanantly with --add-config command
 --max-limit 	- Amount of text that gets translated in each batch (default 128) 
 ```
 
