@@ -16,6 +16,9 @@ higher (or equal) value than the avaialable text to `--max-limit` flag.
 ## Installation
 
 - clone the project
+```
+git clone https://github.com/bmorashad/dev-scripts.git
+```
 - cd into project repository
 ```
 cd dev-script/google-batch-translate
