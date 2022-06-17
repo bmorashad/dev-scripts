@@ -2,7 +2,7 @@
   "name": "gtranslate",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "gtranslate.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,6 +13,6 @@
     "dotenv": "^10.0.0"
   },
   "bin": {
-    "gtranslate": "main.js"
+    "gtranslate": "gtranslate.js"
   }
 }
