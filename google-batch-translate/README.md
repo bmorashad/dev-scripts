@@ -66,8 +66,8 @@ output files is as it is, as a result of that.
 ### Adding .env file
 
 - Create an env file
-- Generate Google Cloud client credentials 
-- Add your Google Cloud credentials to env file which would look like below.
+- [Generate Google Cloud client credentials](https://cloud.google.com/iam/docs/creating-managing-service-account-keys)
+- Add your Google Cloud credentials json as CREDENTIALS variable to env file. It would look like below.
 ```
 CREDENTIALS={"type": "service_account", "project_id": "translate-1", "private_key_id": "private_key_id", "private_key": "private_key", "client_email": "your_email@translate-1.iam.gserviceaccount.com", "client_id": "1144445454", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/rashad%40translate-319310.iam.gserviceaccount.com"}
 ```
