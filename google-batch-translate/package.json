@@ -12,7 +12,7 @@
     "@google-cloud/translate": "^6.2.4",
     "dotenv": "^10.0.0"
   },
-  "bin" : {
-    "gtranslate" : "main.js"
+  "bin": {
+    "gtranslate": "main.js"
   }
 }

@@ -15,9 +15,12 @@ if (args.help) {
   printHelp();
   return;
 }
-if (args["env-config"] && args["env-config"].values[0]) {
-  addEnvConfig(args["env-config"].values[0]);
+if (args["add-config"] && args["add-config"].values[0]) {
+  addEnvConfig(args["add-config"].values[0]);
   return;
+}
+if (args["max-limit"] && args["max-limit"].values[0]) {
+  GT_MAX_LIMIT = args["max-limit"].values[0];
 }
 validateArgs(args);
 
@@ -58,9 +61,36 @@ const translateText = async (text_list, to, from = null) => {
   return response;
 };
 
-const translate = async ({ target, input, from, to, from_language }) => {
-  let input_values = Object.values(input);
-  let input_keys = Object.keys(input);
+const translateTextArray = async ({
+  target,
+  input_values,
+  from,
+  to,
+  from_language,
+}) => {
+  // Extract out this common logic
+  if (to == -1) {
+    to = input_values.length;
+  }
+  input_values = input_values.slice(from, to);
+  let t = await translateText(input_values, target, from_language);
+  const translation = t;
+  const translations_arr = [];
+  for (let i = 0; i < translation.length; i++) {
+    translations_arr[i] = translation[i];
+  }
+  return translations_arr;
+};
+
+const translateKeyValues = async ({
+  target,
+  input_keys,
+  input_values,
+  from,
+  to,
+  from_language,
+}) => {
+  // Extract out this common logic
   if (to == -1) {
     to = input_values.length;
   }
@@ -76,7 +106,8 @@ const translate = async ({ target, input, from, to, from_language }) => {
 };
 
 let translateInBatches = async (input, GT_MAX_LIMIT, target, from_language) => {
-  let input_values = Object.values(input);
+  let is_input_array = input.constructor.name === "Array";
+  let input_values = is_input_array ? input : Object.values(input);
   let input_value_count = input_values.length;
 
   let remaining_last = input_value_count % GT_MAX_LIMIT;
@@ -84,17 +115,34 @@ let translateInBatches = async (input, GT_MAX_LIMIT, target, from_language) => {
 
   let from = 0;
   let to = GT_MAX_LIMIT;
-  let all_translations = {};
 
+  let all_translations_obj = {};
+  let all_translations_arr = [];
+  let input_keys = is_input_array ? [] : Object.keys(input);
   for (let i = 0; i < times + 1; i++) {
-    let transaltion = await translate({
-      target,
-      input,
-      from,
-      to,
-      from_language,
-    });
-    all_translations = { ...transaltion, ...all_translations };
+    // translation logic if input is json obj
+    if (!is_input_array) {
+      let transaltion = await translateKeyValues({
+        target,
+        input_keys,
+        input_values,
+        from,
+        to,
+        from_language,
+      });
+      all_translations_obj = { ...transaltion, ...all_translations_obj };
+    }
+    // translation logic if input is json arr
+    else {
+      let transaltion = await translateTextArray({
+        target,
+        input_values,
+        from,
+        to,
+        from_language,
+      });
+      all_translations_arr = [...transaltion, ...all_translations_arr];
+    }
     from += GT_MAX_LIMIT;
     if (i == times - 1) {
       to = to + remaining_last;
@@ -102,7 +150,10 @@ let translateInBatches = async (input, GT_MAX_LIMIT, target, from_language) => {
       to += GT_MAX_LIMIT;
     }
   }
-  return { translation: all_translations, target };
+  if (is_input_array) {
+    return { translation: all_translations_arr, target };
+  }
+  return { translation: all_translations_obj, target };
 };
 
 let translateAndSave = async (
